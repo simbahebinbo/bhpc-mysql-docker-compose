@@ -6,7 +6,7 @@ volumes:
   mysql-data:
 
 services:
-    mysql-local:
+    mysql-standalone:
         command:
             --wait_timeout=31536000
             --interactive_timeout=31536000
@@ -25,3 +25,4 @@ services:
         volumes:
             - mysql-data:/var/lib/mysql
             - ./init-db:/docker-entrypoint-initdb.d
+        restart: unless-stopped
