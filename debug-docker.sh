@@ -1,5 +1,10 @@
 #!/bin/bash
 
-# 进入镜像内部调试
+# 查看容器日志
 
-docker exec -it $(docker ps -qa | head -1) /bin/sh
+# 当前项目的主要容器名
+containers=("mysql-server")
+
+for container_name in "${containers[@]}"; do
+  docker logs -f $container_name
+done
