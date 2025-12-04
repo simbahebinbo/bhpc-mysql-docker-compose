@@ -1,5 +1,4 @@
 SET NAMES 'utf8mb4';
-use example;
 
 DROP TABLE IF EXISTS person;
 
@@ -16,7 +15,6 @@ CREATE TABLE person (
 INSERT INTO person (username, age) VALUES ('simba', 33);
 INSERT INTO person (username, age) VALUES ('buckshot', 66);
 
-
 DROP TABLE IF EXISTS hero;
 
 CREATE TABLE hero
@@ -29,3 +27,4 @@ CREATE TABLE hero
     UNIQUE KEY unique_username (username),
     KEY index_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='hero table';
+
