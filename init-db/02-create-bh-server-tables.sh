@@ -7,3 +7,4 @@ mysql -upig -p123456 < "/sql/02-create-bh-server-tables.sql"
 
 
 
+
