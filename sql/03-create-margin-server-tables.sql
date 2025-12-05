@@ -4,6 +4,10 @@
 -- 数据库: bh_server
 -- 注意：margin-server 使用 bh_server 数据库
 -- Margin 服务相关表
+--
+-- 重要：此文件需要与以下文件保持完全一致：
+--   - margin-service/margin-server/sql/01-create-tables.sql
+-- 修改此文件时，请同步更新上述文件，确保重启 MySQL 时不会出错。
 
 USE bh_server;
 
