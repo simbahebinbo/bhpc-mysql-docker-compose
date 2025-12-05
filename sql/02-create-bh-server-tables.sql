@@ -75,3 +75,109 @@ CREATE TABLE IF NOT EXISTS tb_account (
   KEY idx_broker_user_id (broker_user_id),
   KEY idx_broker_user_org_id_type_index (broker_user_id, org_id, type, account_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账户表 分片';
+
+-- ============================================
+-- 5. tb_org - 组织表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_org (
+  org_id BIGINT(20) NOT NULL COMMENT '平台生成',
+  name VARCHAR(32) NOT NULL COMMENT '注册时输入的字符ID，唯一索引, 最长32字符',
+  full_name VARCHAR(255) DEFAULT NULL COMMENT '全名',
+  group_name VARCHAR(32) DEFAULT NULL COMMENT '组名，可为空',
+  subject_dn VARCHAR(255) DEFAULT NULL COMMENT 'ssl 证书 DN',
+  saas_id BIGINT(20) DEFAULT NULL COMMENT '创建 org 的 saasId, 可为空',
+  role TINYINT(4) DEFAULT NULL COMMENT '有枚举值。可以是 broker exchange 等',
+  saas_enable TINYINT(4) DEFAULT 0 COMMENT 'saas 控制，默认为0，1为开启',
+  platform_disable TINYINT(4) DEFAULT 0 COMMENT '平台一键禁用，默认为0，1为禁用。为1 则不能开启enable',
+  status TINYINT(4) DEFAULT NULL COMMENT '状态',
+  area_id BIGINT(20) DEFAULT NULL COMMENT '地区 ID',
+  domain_id INT(11) DEFAULT NULL COMMENT '域名ID',
+  support_cold_wallet TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否支持冷钱包',
+  is_private TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否私有',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '创建时间',
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (org_id),
+  UNIQUE KEY name_idx (name) COMMENT '字符ID 唯一索引'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织表';
+
+-- ============================================
+-- 6. tb_symbol - 币对表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_symbol (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  symbol_id VARCHAR(255) DEFAULT NULL COMMENT '币对ID',
+  symbol_name VARCHAR(255) NOT NULL COMMENT '币对名称',
+  base_token_id VARCHAR(255) NOT NULL COMMENT '基础币种ID',
+  quote_token_id VARCHAR(255) NOT NULL COMMENT '计价币种ID',
+  symbol_alias VARCHAR(255) DEFAULT NULL COMMENT '币对别名',
+  status TINYINT(4) DEFAULT NULL COMMENT '状态',
+  min_trade_quantity DECIMAL(65,18) NOT NULL COMMENT '单次交易最小交易base的数量',
+  min_trade_amount DECIMAL(65,18) NOT NULL COMMENT '最小交易额',
+  min_price_precision DECIMAL(65,18) NOT NULL COMMENT '每次价格变动，最小的变动单位',
+  digit_merge_list VARCHAR(64) DEFAULT NULL COMMENT '深度合并。格式：0.01,0.0001,0.000001',
+  base_precision DECIMAL(65,18) DEFAULT NULL COMMENT '基础币种精度',
+  quote_precision DECIMAL(65,18) DEFAULT NULL COMMENT '计价币种精度',
+  allow_trade TINYINT(4) NOT NULL COMMENT '允许交易。1：允许',
+  is_published TINYINT(4) NOT NULL DEFAULT 1 COMMENT '上架下架。0：下架 1：上架',
+  online_time TIMESTAMP(3) NULL DEFAULT NULL COMMENT '上线时间',
+  security_type TINYINT(4) NOT NULL DEFAULT 0 COMMENT '证券类型',
+  futures_multiplier DECIMAL(65,18) NOT NULL DEFAULT 0 COMMENT '期货乘数',
+  funding_lower_bound DECIMAL(65,18) NOT NULL DEFAULT 0 COMMENT '资金费率下限',
+  funding_upper_bound DECIMAL(65,18) NOT NULL DEFAULT 0 COMMENT '资金费率上限',
+  created_at TIMESTAMP(3) NOT NULL COMMENT '创建时间',
+  updated_at TIMESTAMP(3) NOT NULL COMMENT '更新时间',
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='币对表';
+
+-- ============================================
+-- 7. tb_exchange_symbol - 交易所币对表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_exchange_symbol (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  exchange_id BIGINT(20) NOT NULL COMMENT '币对所属交易所ID',
+  symbol_id VARCHAR(255) NOT NULL COMMENT '币对',
+  match_type TINYINT(4) NOT NULL COMMENT '0: self_match. 1: forward',
+  match_exchange_id BIGINT(20) DEFAULT NULL COMMENT '真正执行撮合的交易所ID',
+  host VARCHAR(255) NOT NULL COMMENT '主机地址',
+  port INT(11) NOT NULL COMMENT '端口',
+  service VARCHAR(255) DEFAULT NULL COMMENT '服务名称，用于HA',
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='db 表放在平台，后续的写入要放在交易所的后台中。读取主要是 trade 读';
+
+-- 插入初始数据：tb_exchange_symbol 至少需要一条记录
+INSERT IGNORE INTO tb_exchange_symbol (exchange_id, symbol_id, match_type, host, port, service) 
+VALUES (1, 'BTCUSDT', 0, 'localhost', 8080, 'bh-match-1');
+
+-- ============================================
+-- 8. tb_futures_insurance_fund_config - 期货保险基金配置表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_futures_insurance_fund_config (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  exchange_id BIGINT(20) NOT NULL COMMENT '交易所ID',
+  symbol_id VARCHAR(255) NOT NULL COMMENT '币对',
+  token_id VARCHAR(255) DEFAULT NULL COMMENT '币种',
+  income_account_id BIGINT(20) DEFAULT NULL COMMENT '收入账户 account id',
+  funding_account_id BIGINT(20) DEFAULT NULL COMMENT '保险基金账户 account id',
+  funding_min_balance DECIMAL(65,18) DEFAULT NULL COMMENT '保险基金账户最小余额警戒线',
+  funding_maintaining_balance DECIMAL(65,18) DEFAULT NULL COMMENT '保险基金账户维持余额',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '创建时间',
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY exchange_symbol_idx (exchange_id, symbol_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期货保险基金配置表';
+
+-- ============================================
+-- 9. tb_broker_maker_bonus_config - 券商Maker奖励配置表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_broker_maker_bonus_config (
+  id INT(11) NOT NULL AUTO_INCREMENT,
+  broker_id BIGINT(20) NOT NULL COMMENT '券商ID',
+  symbol_id VARCHAR(255) NOT NULL COMMENT '币对',
+  maker_bonus_rate DECIMAL(65,18) DEFAULT NULL COMMENT 'Maker奖励费率',
+  min_interest_fee_rate DECIMAL(65,18) DEFAULT NULL COMMENT '最小利息费率',
+  min_taker_fee_rate DECIMAL(65,18) DEFAULT NULL COMMENT '最小Taker费率',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '创建时间',
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (id),
+  KEY broker_symbol_idx (broker_id, symbol_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='券商Maker奖励配置表';
