@@ -202,3 +202,56 @@ CREATE TABLE IF NOT EXISTS tb_token_option (
   PRIMARY KEY (id),
   UNIQUE KEY token_id_idx (token_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Token期权扩展表';
+
+-- ============================================
+-- 11. tb_symbol_futures - 期货币对扩展表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_symbol_futures (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  symbol_id VARCHAR(255) NOT NULL COMMENT '期货名称',
+  issue_date DATETIME NOT NULL DEFAULT '1970-01-02 00:00:00' COMMENT '生效/上线日期',
+  settlement_date DATETIME NOT NULL DEFAULT '1970-01-02 00:00:00' COMMENT '到期/交割时间',
+  display_token VARCHAR(50) NOT NULL DEFAULT '' COMMENT '显示用的估价token',
+  underlying_id VARCHAR(255) DEFAULT NULL COMMENT '标的id',
+  currency VARCHAR(25) NOT NULL DEFAULT '' COMMENT '计价单位(token_id)',
+  currency_display VARCHAR(25) NOT NULL DEFAULT '' COMMENT '显示价格单位',
+  contract_multiplier DECIMAL(65,8) UNSIGNED NOT NULL DEFAULT '0.00000000' COMMENT '合约乘数',
+  limit_down_in_trading_hours DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '交易时段内下跌限价',
+  limit_up_in_trading_hours DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '交易时段内上涨限价',
+  limit_down_out_trading_hours DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '交易时段外下跌限价',
+  limit_up_out_trading_hours DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '交易时段外上涨限价',
+  max_leverage DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '最大杠杆',
+  leverage_range VARCHAR(100) NOT NULL DEFAULT '' COMMENT '杠杆范围',
+  over_price_range VARCHAR(100) NOT NULL DEFAULT '' COMMENT '超价浮动范围',
+  market_price_range VARCHAR(100) NOT NULL DEFAULT '' COMMENT '市价浮动范围',
+  is_perpetual_swap TINYINT(1) NOT NULL DEFAULT '0' COMMENT '是否永续合约',
+  index_token VARCHAR(255) DEFAULT NULL COMMENT '指数名称',
+  display_index_token VARCHAR(255) DEFAULT NULL COMMENT '用于页面显示指数价格(正向=index_token,反则反之)',
+  funding_lower_bound DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '永续合约资金费率下限',
+  funding_upper_bound DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '永续合约资金费率上限',
+  funding_interest DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '永续合约两币种借贷利率之和',
+  is_reverse TINYINT(1) NOT NULL DEFAULT '0' COMMENT '是否反向合约',
+  margin_precision DECIMAL(65,8) NOT NULL DEFAULT '0.00000001' COMMENT '用户修改保证金的最小精度',
+  owner_exchange_id BIGINT(20) DEFAULT NULL COMMENT '归属交易所id',
+  safe_price_bound DECIMAL(65,18) DEFAULT NULL COMMENT '安全价格浮动比率（用于爆仓和市价平仓价格保护）',
+  ref_price_type INT(11) DEFAULT NULL COMMENT '引用价格（0-指数价格，1-标记价格）',
+  symbol_name_locale_json TEXT DEFAULT NULL COMMENT '币对名称多语言JSON',
+  display_underlying_id VARCHAR(255) DEFAULT NULL COMMENT '期货名义标的ID（用于对外展示，忽略正反向区别）',
+  created_at TIMESTAMP(3) NOT NULL,
+  updated_at TIMESTAMP(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY token_id_idx (symbol_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期货币对扩展表';
+
+-- ============================================
+-- 12. tb_underlying - 标地表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_underlying (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  underlying_id VARCHAR(255) NOT NULL DEFAULT '' COMMENT '标的id',
+  type TINYINT(4) NOT NULL COMMENT '标的类型，1=期权 2=期货',
+  parent_underlying_id VARCHAR(255) DEFAULT NULL COMMENT '父级标的id',
+  levels INT(4) NOT NULL DEFAULT '0' COMMENT '级别',
+  PRIMARY KEY (id),
+  UNIQUE KEY underlying_id_idx (underlying_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标地表';
