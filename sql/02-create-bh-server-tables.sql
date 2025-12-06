@@ -252,6 +252,7 @@ CREATE TABLE IF NOT EXISTS tb_underlying (
   type TINYINT(4) NOT NULL COMMENT '标的类型，1=期权 2=期货',
   parent_underlying_id VARCHAR(255) DEFAULT NULL COMMENT '父级标的id',
   levels INT(4) NOT NULL DEFAULT '0' COMMENT '级别',
+  tag VARCHAR(255) DEFAULT NULL COMMENT '标的标签 explore=体验区 默认为NULL',
   PRIMARY KEY (id),
   UNIQUE KEY underlying_id_idx (underlying_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标地表';
