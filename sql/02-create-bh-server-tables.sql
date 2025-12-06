@@ -273,3 +273,17 @@ CREATE TABLE IF NOT EXISTS tb_futures_risk_limit (
   PRIMARY KEY (id),
   UNIQUE KEY risk_limit_id_idx (risk_limit_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期货风险限额字典表';
+
+-- ============================================
+-- 14. tb_option_position_limit - 期权仓位限制表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_option_position_limit (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  account_id BIGINT(20) DEFAULT NULL COMMENT '期权账户ID',
+  broker_id BIGINT(20) NOT NULL COMMENT '券商ID',
+  position_limit DECIMAL(20,8) NOT NULL COMMENT '仓位限额',
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY tb_option_position_limit_account_id_uindex (account_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期权仓位限制表';
