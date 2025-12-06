@@ -126,6 +126,13 @@ CREATE TABLE IF NOT EXISTS tb_symbol (
   funding_upper_bound DECIMAL(65,18) NOT NULL DEFAULT 0 COMMENT '资金费率上限',
   created_at TIMESTAMP(3) NOT NULL COMMENT '创建时间',
   updated_at TIMESTAMP(3) NOT NULL COMMENT '更新时间',
+  is_baas TINYINT(1) DEFAULT NULL COMMENT '是否BaaS',
+  is_aggregate TINYINT(1) DEFAULT NULL COMMENT '是否聚合',
+  is_test TINYINT(1) DEFAULT NULL COMMENT '是否测试币',
+  apply_broker_id BIGINT(20) DEFAULT NULL COMMENT '申请方券商ID',
+  is_private_symbol TINYINT(1) DEFAULT NULL COMMENT '是否私有币对',
+  is_mainstream TINYINT(1) DEFAULT NULL COMMENT '是否主流币',
+  public_to_broker_time TIMESTAMP NULL DEFAULT NULL COMMENT '对券商开放时间',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='币对表';
 
@@ -138,9 +145,22 @@ CREATE TABLE IF NOT EXISTS tb_exchange_symbol (
   symbol_id VARCHAR(255) NOT NULL COMMENT '币对',
   match_type TINYINT(4) NOT NULL COMMENT '0: self_match. 1: forward',
   match_exchange_id BIGINT(20) DEFAULT NULL COMMENT '真正执行撮合的交易所ID',
+  status TINYINT(4) DEFAULT '0' COMMENT '状态0-下架 1-上架',
+  allow_trade TINYINT(4) DEFAULT '0' COMMENT '状态0-不允许交易 1-允许交易',
+  saas_allow_trade_status TINYINT(4) DEFAULT NULL COMMENT 'SaaS允许交易状态',
   host VARCHAR(255) NOT NULL COMMENT '主机地址',
   port INT(11) NOT NULL COMMENT '端口',
-  service VARCHAR(255) DEFAULT NULL COMMENT '服务名称，用于HA',
+  service VARCHAR(255) DEFAULT 'match-engine.exchange' COMMENT '服务该币对的撮合的服务名称',
+  plan_order_service VARCHAR(255) DEFAULT 'plan-order.service' COMMENT '服务该币对的计划委托服务名称',
+  buy_min_price DECIMAL(65,18) DEFAULT NULL COMMENT '买入最小价格',
+  buy_max_price DECIMAL(65,18) DEFAULT NULL COMMENT '买入最大价格',
+  sell_min_price DECIMAL(65,18) DEFAULT NULL COMMENT '卖出最小价格',
+  sell_max_price DECIMAL(65,18) DEFAULT NULL COMMENT '卖出最大价格',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '创建时间',
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL COMMENT '更新时间',
+  maker_bonus_rate DECIMAL(65,18) DEFAULT NULL COMMENT 'Maker奖励费率',
+  min_interest_fee_rate DECIMAL(65,18) DEFAULT NULL COMMENT '最小利息费率',
+  position_max_limit DECIMAL(65,18) DEFAULT NULL COMMENT '持仓最大限额',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='db 表放在平台，后续的写入要放在交易所的后台中。读取主要是 trade 读';
 
@@ -287,3 +307,68 @@ CREATE TABLE IF NOT EXISTS tb_option_position_limit (
   PRIMARY KEY (id),
   UNIQUE KEY tb_option_position_limit_account_id_uindex (account_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期权仓位限制表';
+
+-- ============================================
+-- 15. tb_convert_ticket - 币种转换订单表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_convert_ticket (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  client_req_id BIGINT(20) DEFAULT NULL,
+  taker_account_id BIGINT(20) DEFAULT NULL,
+  taker_org_id BIGINT(20) DEFAULT NULL,
+  maker_account_id BIGINT(20) DEFAULT NULL,
+  maker_org_id BIGINT(20) DEFAULT NULL,
+  taker_token_id VARCHAR(255) DEFAULT NULL,
+  taker_amount DECIMAL(65,18) DEFAULT NULL,
+  maker_token_id VARCHAR(255) DEFAULT NULL,
+  maker_amount DECIMAL(65,18) DEFAULT NULL,
+  status INT(11) DEFAULT NULL COMMENT '1. taker余额不足。2. maker余额不足。3.处理中。 4. 失败。 200. 成功',
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='币种转换订单表';
+
+-- ============================================
+-- 16. tb_share_margin_loan_deal - 跨分片杠杆借币处理记录表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_share_margin_loan_deal (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  client_id VARCHAR(255) DEFAULT NULL COMMENT '用户请求的clientId',
+  loan_order_id BIGINT(20) DEFAULT NULL COMMENT '借贷记录订单ID',
+  loan_org_id BIGINT(20) DEFAULT NULL COMMENT '借入方机构id',
+  loan_account_id BIGINT(20) DEFAULT NULL COMMENT '借入方账户id',
+  lender_org_id BIGINT(20) DEFAULT NULL COMMENT '出资方机构id',
+  lender_account_id BIGINT(20) DEFAULT NULL COMMENT '出资方账户id',
+  status INT(11) DEFAULT NULL COMMENT '1=初始 2=处理lender错误 3=已处理lender 4=处理loan错误 5=已处理loan 6=回滚lender',
+  message VARCHAR(500) DEFAULT NULL COMMENT '错误信息',
+  retry_num INT(11) DEFAULT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='跨分片杠杆借币处理记录表';
+
+-- ============================================
+-- 17. tb_cold_wallet_balance - 冷钱包余额表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_cold_wallet_balance (
+  id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  broker_id BIGINT(20) NOT NULL,
+  token_id VARCHAR(200) NOT NULL DEFAULT '',
+  broker_self_holds DECIMAL(65,18) NOT NULL COMMENT 'broker 自己提走的币数量',
+  broker_total_value DECIMAL(65,18) NOT NULL COMMENT 'broker 所有用户的总资产',
+  broker_hot_value DECIMAL(65,18) DEFAULT NULL COMMENT '热钱包资产，即当前在钱包剩余资产',
+  exclude_value DECIMAL(65,18) DEFAULT NULL COMMENT '排除值，用于计算热钱包阈值',
+  hold_rate DECIMAL(65,18) NOT NULL COMMENT '自提币比例 = brokerSelfHolds / brokerTotalValue',
+  left_hold_rate DECIMAL(65,18) DEFAULT '0.800000000000000000',
+  right_hold_rate DECIMAL(65,18) DEFAULT '0.950000000000000000',
+  withdraw_forbidden_rate DECIMAL(65,18) NOT NULL COMMENT '自提币比例 超过该值后禁止普通用户提现',
+  bound_withdraw_address VARCHAR(200) NOT NULL DEFAULT '' COMMENT '绑定的提现地址',
+  bound_withdraw_address_memo VARCHAR(50) DEFAULT NULL COMMENT '绑定的提现地址memo',
+  bound_deposit_address VARCHAR(200) NOT NULL DEFAULT '' COMMENT '绑定的充值地址',
+  bound_deposit_address_memo VARCHAR(50) DEFAULT NULL COMMENT '绑定的充值地址memo',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL,
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL,
+  schedule_update TINYINT(1) DEFAULT '1',
+  PRIMARY KEY (id),
+  UNIQUE KEY idx_brokerId_tokenId (broker_id, token_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='冷钱包余额表';
