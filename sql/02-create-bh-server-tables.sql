@@ -261,6 +261,7 @@ CREATE TABLE IF NOT EXISTS tb_underlying (
 -- 13. tb_futures_risk_limit - 期货风险限额字典表
 -- ============================================
 CREATE TABLE IF NOT EXISTS tb_futures_risk_limit (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '自增主键',
   risk_limit_id BIGINT(20) NOT NULL COMMENT '风险限额id',
   underlying_id VARCHAR(255) DEFAULT NULL COMMENT '标的id',
   symbol_id VARCHAR(255) DEFAULT NULL COMMENT '合约ID',
@@ -269,5 +270,6 @@ CREATE TABLE IF NOT EXISTS tb_futures_risk_limit (
   initial_margin DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '起始保证金率。（解释： 0.1 = 10%）',
   created_at TIMESTAMP(3) NULL DEFAULT NULL,
   updated_at TIMESTAMP(3) NULL DEFAULT NULL,
-  PRIMARY KEY (risk_limit_id)
+  PRIMARY KEY (id),
+  UNIQUE KEY risk_limit_id_idx (risk_limit_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期货风险限额字典表';
