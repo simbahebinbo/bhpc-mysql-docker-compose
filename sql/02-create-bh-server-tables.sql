@@ -256,3 +256,18 @@ CREATE TABLE IF NOT EXISTS tb_underlying (
   PRIMARY KEY (id),
   UNIQUE KEY underlying_id_idx (underlying_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标地表';
+
+-- ============================================
+-- 13. tb_futures_risk_limit - 期货风险限额字典表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_futures_risk_limit (
+  risk_limit_id BIGINT(20) NOT NULL COMMENT '风险限额id',
+  underlying_id VARCHAR(255) DEFAULT NULL COMMENT '标的id',
+  symbol_id VARCHAR(255) DEFAULT NULL COMMENT '合约ID',
+  risk_limit_amount DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '风险限额(最大持仓量)',
+  maintain_margin DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '维持保证金率。（解释： 0.03 = 3%）',
+  initial_margin DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '起始保证金率。（解释： 0.1 = 10%）',
+  created_at TIMESTAMP(3) NULL DEFAULT NULL,
+  updated_at TIMESTAMP(3) NULL DEFAULT NULL,
+  PRIMARY KEY (risk_limit_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期货风险限额字典表';
