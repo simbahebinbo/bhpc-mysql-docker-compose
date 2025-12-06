@@ -348,6 +348,28 @@ CREATE TABLE IF NOT EXISTS tb_share_margin_loan_deal (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='跨分片杠杆借币处理记录表';
 
 -- ============================================
+-- 17. tb_share_margin_repay_deal - 跨分片杠杆还币处理记录表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_share_margin_repay_deal (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  client_id VARCHAR(255) DEFAULT NULL COMMENT '用户请求的clientId',
+  loan_order_id BIGINT(20) DEFAULT NULL COMMENT '借贷记录订单ID',
+  repay_order_id BIGINT(20) DEFAULT NULL COMMENT '还币记录订单ID',
+  loan_org_id BIGINT(20) DEFAULT NULL COMMENT '借入方机构id',
+  loan_account_id BIGINT(20) DEFAULT NULL COMMENT '借入方账户id',
+  lender_org_id BIGINT(20) DEFAULT NULL COMMENT '出资方机构id',
+  lender_account_id BIGINT(20) DEFAULT NULL COMMENT '出资方账户id',
+  repay_type INT(11) DEFAULT NULL COMMENT '还币类型',
+  repay_amount DECIMAL(65,18) DEFAULT NULL COMMENT '还币金额',
+  status INT(11) DEFAULT NULL COMMENT '1=初始 2=处理loan错误 3=已处理loan 4=处理lender错误 5=已处理lender 6=(对于还款出现异常且确认未触发调整)本次放弃',
+  message VARCHAR(500) DEFAULT NULL COMMENT '错误信息',
+  retry_num INT(11) DEFAULT NULL,
+  created_at TIMESTAMP NULL DEFAULT NULL,
+  updated_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='跨分片杠杆还币处理记录表';
+
+-- ============================================
 -- 17. tb_cold_wallet_balance - 冷钱包余额表
 -- ============================================
 CREATE TABLE IF NOT EXISTS tb_cold_wallet_balance (
