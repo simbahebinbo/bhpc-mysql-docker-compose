@@ -181,3 +181,24 @@ CREATE TABLE IF NOT EXISTS tb_broker_maker_bonus_config (
   PRIMARY KEY (id),
   KEY broker_symbol_idx (broker_id, symbol_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='券商Maker奖励配置表';
+
+-- ============================================
+-- 10. tb_token_option - Token期权扩展表
+-- ============================================
+CREATE TABLE IF NOT EXISTS tb_token_option (
+  id BIGINT(20) NOT NULL AUTO_INCREMENT,
+  token_id VARCHAR(255) NOT NULL COMMENT '期权名称',
+  strike_price DECIMAL(65,8) NOT NULL DEFAULT '0.00000000' COMMENT '行权价',
+  issue_date DATETIME NOT NULL DEFAULT '1970-01-02 00:00:00' COMMENT '生效/上线日期',
+  settlement_date DATETIME NOT NULL DEFAULT '1970-01-02 00:00:00' COMMENT '到期/交割时间',
+  is_call TINYINT(1) NOT NULL COMMENT 'call or put',
+  max_pay_off DECIMAL(65,18) NOT NULL DEFAULT '0.000000000000000000' COMMENT '最大赔付',
+  coin_token VARCHAR(255) NOT NULL COMMENT '交易(quote)token',
+  index_token VARCHAR(255) NOT NULL COMMENT '标的指数(symbol)',
+  position_limit DECIMAL(20,8) NOT NULL DEFAULT '100.00000000' COMMENT '单帐户仓位限制,做多做空相同',
+  underlying_id VARCHAR(255) DEFAULT '' COMMENT '标的id',
+  created_at TIMESTAMP(3) NOT NULL,
+  updated_at TIMESTAMP(3) NOT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY token_id_idx (token_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Token期权扩展表';
