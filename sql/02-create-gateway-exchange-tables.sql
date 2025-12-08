@@ -2,7 +2,7 @@
 -- Gateway Exchange Database Schema
 -- ============================================
 -- 数据库: gateway_exchange
--- 用于 match-engine 和其他 gateway 服务
+-- 用于 match-engine、quote-service 和其他 gateway 服务
 
 USE gateway_exchange;
 
@@ -101,5 +101,68 @@ CREATE TABLE tb_partition (
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='分片表';
 
-SET FOREIGN_KEY_CHECKS = 1;
+-- ============================================
+-- 6. tb_legal_coin_settings - 法币设置表 (quote-service)
+-- ============================================
+DROP TABLE IF EXISTS tb_legal_coin_settings;
+CREATE TABLE tb_legal_coin_settings (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  name varchar(45) COLLATE utf8mb4_0900_bin NOT NULL,
+  support bit(1) NOT NULL DEFAULT b'0' COMMENT '0: 不支持 1: 支持',
+  create_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_bin COMMENT='法币设置表';
 
+-- ============================================
+-- 7. tb_option_task - 期权任务表 (quote-service)
+-- ============================================
+DROP TABLE IF EXISTS tb_option_task;
+CREATE TABLE tb_option_task (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  exchange_id bigint(20) NOT NULL COMMENT '交易所id',
+  symbol varchar(64) NOT NULL COMMENT '币对',
+  option_id bigint(20) NOT NULL COMMENT '期权 ID',
+  issue_time bigint(20) NOT NULL COMMENT '上线时间',
+  settle_time bigint(20) NOT NULL COMMENT '交割时间',
+  state int(11) NOT NULL DEFAULT '0' COMMENT '任务状态 0. 移库中，从kline表移到history_kline; 1. 交割完成后删除原始表中的数据; 2. 完成状态',
+  create_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_exchange_symbol (exchange_id, symbol),
+  KEY idx_option_id (option_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='期权任务表';
+
+-- ============================================
+-- 8. tb_rate - 汇率表 (quote-service)
+-- ============================================
+DROP TABLE IF EXISTS tb_rate;
+CREATE TABLE tb_rate (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  exchange_id bigint(20) NOT NULL COMMENT '交易所id',
+  token varchar(64) NOT NULL COMMENT '代币',
+  usd varchar(64) NOT NULL COMMENT 'USD价格',
+  create_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  udpate_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间（注意：代码中拼写为udpate_at）',
+  PRIMARY KEY (id),
+  KEY idx_exchange_token (exchange_id, token)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='汇率表';
+
+-- ============================================
+-- 9. tb_rate_statistic - 汇率统计表 (quote-service)
+-- ============================================
+DROP TABLE IF EXISTS tb_rate_statistic;
+CREATE TABLE tb_rate_statistic (
+  id bigint(20) NOT NULL AUTO_INCREMENT,
+  exchange_id bigint(20) NOT NULL COMMENT '交易所id',
+  base varchar(64) NOT NULL COMMENT '基础币种',
+  quote varchar(64) NOT NULL COMMENT '计价币种',
+  rate decimal(36,18) NOT NULL COMMENT '汇率',
+  create_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  update_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_exchange_base_quote (exchange_id, base, quote),
+  KEY idx_create_at (create_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='汇率统计表';
+
+SET FOREIGN_KEY_CHECKS = 1;
